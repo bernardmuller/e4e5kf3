@@ -7,7 +7,8 @@ import (
 
 func main() {
 	// FEN := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-	FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
+	// FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
+	FEN := "r4rk1/1pp1nppp/p1nqp3/1B1pNb2/3P1P2/2P5/PP1N1PPP/R2Q1RK1 w - - 0 11"
 	board := strings.Split(FEN, "")
 	fmt.Println(board)
 
