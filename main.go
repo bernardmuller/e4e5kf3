@@ -6,6 +6,51 @@ import (
 	"strings"
 )
 
+// Piece represents a chess piece.
+type Piece string
+
+// display maps pieces from their FEN representations to their ASCII
+// representations for a more human readable experience.
+var display = map[Piece]string{
+	"":  " ",
+	"B": "♝",
+	"K": "♚",
+	"N": "♞",
+	"P": "♟",
+	"Q": "♛",
+	"R": "♜",
+	"b": "♗",
+	"k": "♔",
+	"n": "♘",
+	"p": "♙",
+	"q": "♕",
+	"r": "♖",
+}
+
+type File string
+type Rank string
+
+var FILES = [8]File{"a", "b", "c", "d", "e", "f", "g", "h"}
+var RANKS = [8]Rank{"1", "2", "3", "4", "5", "6", "7", "8"}
+
+func indexOfFile(item File, array [8]File) int {
+	for k, v := range array {
+		if item == v {
+			return k
+		}
+	}
+	return -1
+}
+
+func indexOfRank(item Rank, array [8]Rank) int {
+	for k, v := range array {
+		if item == v {
+			return k
+		}
+	}
+	return -1
+}
+
 func main() {
 	// FEN := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
@@ -34,7 +79,8 @@ func main() {
 					col++
 				}
 			} else {
-				current_board[row][col] = string(FEN_layout[i])
+				FEN_piece := FEN_layout[i]
+				current_board[row][col] = display[Piece(FEN_piece)]
 				col++
 			}
 		}
@@ -42,14 +88,28 @@ func main() {
 
 	for i := 0; i < 8; i++ {
 		fmt.Print(8 - i)
-		fmt.Print(" ")
+		fmt.Print("  ")
 		for j := 0; j < 8; j++ {
 			fmt.Print(current_board[i][j])
 		}
 		fmt.Println()
 	}
 	fmt.Println()
-	fmt.Print("  abcdefgh\n")
+	fmt.Print("   abcdefgh\n")
+
+	var user_input string
+	for {
+		fmt.Print("Select a square:")
+		fmt.Scanf("%s", &user_input)
+		fmt.Printf("you selected square %s", user_input)
+		fmt.Println("")
+		selected_file := strings.Split(user_input, "")[0]
+		selected_rank := strings.Split(user_input, "")[1]
+		fmt.Printf("%d", indexOfRank(Rank(selected_rank), RANKS))
+		fmt.Printf("%d", indexOfFile(File(selected_file), FILES))
+		selected_piece := current_board[7-indexOfRank(Rank(selected_rank), RANKS)][indexOfFile(File(selected_file), FILES)]
+		fmt.Printf("the pieve on that square is %s \n", selected_piece)
+	}
 
 	// chessboard := [8][8]string{
 	// 	{"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"},
