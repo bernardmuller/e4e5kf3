@@ -1,16 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-// Piece represents a chess piece.
 type Piece string
 
-// display maps pieces from their FEN representations to their ASCII
-// representations for a more human readable experience.
 var display = map[Piece]string{
 	"":  " ",
 	"B": "♝",
@@ -27,28 +25,62 @@ var display = map[Piece]string{
 	"r": "♖",
 }
 
+type Square string
+
+var DEFAULT_CHESSBOARD = [8][8]string{
+	{"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"},
+	{"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"},
+	{"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6"},
+	{"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5"},
+	{"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4"},
+	{"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3"},
+	{"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2"},
+	{"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"},
+}
+
 type File string
 type Rank string
 
 var FILES = [8]File{"a", "b", "c", "d", "e", "f", "g", "h"}
 var RANKS = [8]Rank{"1", "2", "3", "4", "5", "6", "7", "8"}
 
-func indexOfFile(item File, array [8]File) int {
+func indexOfFile(item File, array [8]File) (int, error) {
 	for k, v := range array {
 		if item == v {
-			return k
+			return k, nil
 		}
 	}
-	return -1
+	return -1, errors.New("invalid file")
 }
 
-func indexOfRank(item Rank, array [8]Rank) int {
+func indexOfRank(item Rank, array [8]Rank) (int, error) {
 	for k, v := range array {
 		if item == v {
-			return k
+			return k, nil
 		}
 	}
-	return -1
+	return -1, errors.New("invalid rank")
+}
+
+func getPieceCoordinates(square string) ([]int, error) {
+	selected_file, file_err := indexOfFile(File(strings.Split(square, "")[0]), FILES)
+	selected_rank, rank_err := indexOfRank(Rank(strings.Split(square, "")[1]), RANKS)
+	if file_err != nil || rank_err != nil {
+		return []int{selected_file, selected_rank}, errors.New("invalid square")
+	}
+	return []int{selected_file, selected_rank}, nil
+}
+
+func pieceOnSquare(square string, board [][]string) (string, error) {
+	selected_file := strings.Split(square, "")[0]
+	selected_rank := strings.Split(square, "")[1]
+	file_index, file_index_err := indexOfRank(Rank(selected_rank), RANKS)
+	rank_index, rank_index_err := indexOfFile(File(selected_file), FILES)
+	if file_index_err != nil || rank_index_err != nil {
+		return "", errors.New("invalid square")
+	}
+	piece := board[7-file_index][rank_index]
+	return piece, nil
 }
 
 func main() {
@@ -101,24 +133,31 @@ func main() {
 	for {
 		fmt.Print("Select a square:")
 		fmt.Scanf("%s", &user_input)
-		fmt.Printf("you selected square %s", user_input)
 		fmt.Println("")
-		selected_file := strings.Split(user_input, "")[0]
-		selected_rank := strings.Split(user_input, "")[1]
-		fmt.Printf("%d", indexOfRank(Rank(selected_rank), RANKS))
-		fmt.Printf("%d", indexOfFile(File(selected_file), FILES))
-		selected_piece := current_board[7-indexOfRank(Rank(selected_rank), RANKS)][indexOfFile(File(selected_file), FILES)]
-		fmt.Printf("the pieve on that square is %s \n", selected_piece)
-	}
 
-	// chessboard := [8][8]string{
-	// 	{"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"},
-	// 	{"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"},
-	// 	{"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6"},
-	// 	{"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5"},
-	// 	{"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4"},
-	// 	{"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3"},
-	// 	{"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2"},
-	// 	{"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"},
-	// }
+		piece_coordinates, piece_coordinates_err := getPieceCoordinates(user_input)
+		if piece_coordinates_err != nil {
+			fmt.Println(piece_coordinates_err)
+		}
+
+		piece, piece_err := pieceOnSquare(user_input, current_board)
+		if piece_err != nil {
+			fmt.Println(piece_err)
+		}
+
+		fmt.Printf("the piece on square is %s \n", piece)
+		fmt.Printf("the piece coordinates are %v \n", piece_coordinates)
+	}
 }
+
+// Notes
+// a1 => [0, 0]
+// [0, 0] => get piece
+// use piece and [0, 0] to calculate valid moves
+// [x] trying to get the coordinates of a piece by giving the square "a1" and it gives back "00"
+// [x] check if the input square string is a valid square on a chessboard
+// - extract the FEN - Multidim slice to it's own function
+// - extract render current board to its own func
+// - move a piece
+// - export FEN with moved square
+// - start valid move logic
