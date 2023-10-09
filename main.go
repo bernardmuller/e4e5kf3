@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -27,8 +29,7 @@ var display = map[Piece]string{
 
 type Square string
 
-var DEFAULT_CHESSBOARD = [8][8]string{
-	{"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"},
+var chessboard = [][]string{
 	{"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"},
 	{"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6"},
 	{"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5"},
@@ -84,8 +85,8 @@ func pieceOnSquare(square string, board [][]string) (string, error) {
 }
 
 func main() {
-	// FEN := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-	FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
+	FEN := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	// FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
 	// FEN := "r4rk1/1pp1nppp/p1nqp3/1B1pNb2/3P1P2/2P5/PP1N1PPP/R2Q1RK1 w - - 0 11"
 	FEN_layout := strings.Split(strings.Split(FEN, " ")[0], "")
 
@@ -118,35 +119,50 @@ func main() {
 		}
 	}
 
-	for i := 0; i < 8; i++ {
-		fmt.Print(8 - i)
-		fmt.Print("  ")
-		for j := 0; j < 8; j++ {
-			fmt.Print(current_board[i][j])
+	for {
+		fmt.Print("\033c")
+		for i := 0; i < 8; i++ {
+			fmt.Print(8 - i)
+			fmt.Print("  ")
+			for j := 0; j < 8; j++ {
+				fmt.Print(current_board[i][j])
+			}
+			fmt.Println()
 		}
 		fmt.Println()
-	}
-	fmt.Println()
-	fmt.Print("   abcdefgh\n")
+		fmt.Print("   abcdefgh\n")
 
-	var user_input string
-	for {
+		in := bufio.NewReader(os.Stdin)
 		fmt.Print("Select a square:")
-		fmt.Scanf("%s", &user_input)
+		user_input, err := in.ReadString('\n')
+		if err != nil {
+			fmt.Println(err)
+		}
+		// fmt.Scanf("%s", &user_input)
 		fmt.Println("")
 
-		piece_coordinates, piece_coordinates_err := getPieceCoordinates(user_input)
+		fmt.Printf("user input => %s\n", user_input)
+
+		selected_square, destination_square := strings.Split(user_input, " ")[0], strings.Split(user_input, " ")[1]
+
+		selected_piece_coordinates, piece_coordinates_err := getPieceCoordinates(selected_square)
 		if piece_coordinates_err != nil {
 			fmt.Println(piece_coordinates_err)
 		}
 
-		piece, piece_err := pieceOnSquare(user_input, current_board)
+		destination_coordinates, piece_coordinates_err := getPieceCoordinates(destination_square)
+		if piece_coordinates_err != nil {
+			fmt.Println(piece_coordinates_err)
+		}
+
+		piece, piece_err := pieceOnSquare(selected_square, current_board)
 		if piece_err != nil {
 			fmt.Println(piece_err)
 		}
 
-		fmt.Printf("the piece on square is %s \n", piece)
-		fmt.Printf("the piece coordinates are %v \n", piece_coordinates)
+		cbp := &current_board
+		(*cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = piece
+		(*cbp)[7-selected_piece_coordinates[1]][selected_piece_coordinates[0]] = " "
 	}
 }
 
