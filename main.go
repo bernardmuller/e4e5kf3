@@ -84,11 +84,9 @@ func pieceOnSquare(square string, board [][]string) (string, error) {
 	return piece, nil
 }
 
-func main() {
-	FEN := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-	// FEN := "rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq d3 0 3"
-	// FEN := "r4rk1/1pp1nppp/p1nqp3/1B1pNb2/3P1P2/2P5/PP1N1PPP/R2Q1RK1 w - - 0 11"
-	FEN_layout := strings.Split(strings.Split(FEN, " ")[0], "")
+func initialiseBoard(FEN_string *string) *[][]string {
+	FEN := FEN_string
+	FEN_layout := strings.Split(strings.Split(*FEN, " ")[0], "")
 
 	row := 0
 	col := 0
@@ -119,21 +117,28 @@ func main() {
 		}
 	}
 
+	return &current_board
+}
+
+func startGameLoop(board *[][]string) {
 	for {
+		current_board := *board
 		fmt.Print("\033c")
+		fmt.Println("   abcdefgh")
+		fmt.Println(" ╔══════════╗")
 		for i := 0; i < 8; i++ {
 			fmt.Print(8 - i)
-			fmt.Print("  ")
+			fmt.Print("║ ")
 			for j := 0; j < 8; j++ {
 				fmt.Print(current_board[i][j])
 			}
+			fmt.Print(" ║")
 			fmt.Println()
 		}
-		fmt.Println()
-		fmt.Print("   abcdefgh\n")
+		fmt.Println(" ╚══════════╝")
 
 		in := bufio.NewReader(os.Stdin)
-		fmt.Print("Select a square:")
+		fmt.Print("move (eg. e2 e4):")
 		user_input, err := in.ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
@@ -166,6 +171,53 @@ func main() {
 	}
 }
 
+func startNewGame(FEN *string) {
+	fmt.Println("start")
+	*FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	board := initialiseBoard(FEN)
+	startGameLoop(board)
+}
+
+func main() {
+	invalid_input := false
+	for {
+		var FEN string
+		fmt.Print("\033c")
+		fmt.Println("╔═══════════════════╗")
+		fmt.Println("║       Chess       ║")
+		fmt.Println("║                   ║")
+		fmt.Println("║ 1. New Game       ║")
+		// fmt.Println("║ 2. Load Game      ║")
+		// fmt.Println("║ 3. Instructions   ║")
+		fmt.Println("║ 2. Quit           ║")
+		fmt.Println("║                   ║")
+		if invalid_input {
+			fmt.Println("║   invalid input   ║")
+		} else {
+			fmt.Println("║                   ║")
+		}
+		fmt.Println("╚═══════════════════╝")
+
+		in := bufio.NewReader(os.Stdin)
+		fmt.Print("")
+		menu_input, err := in.ReadString('\n')
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		menu_input = strings.TrimSpace(menu_input) // Remove leading/trailing spaces
+
+		if menu_input == "1" {
+			startNewGame(&FEN)
+		} else if menu_input == "2" {
+			fmt.Println("Quitting the game...")
+			break // Exit the loop and end the program
+		} else {
+			invalid_input = true
+		}
+	}
+}
+
 // Notes
 // a1 => [0, 0]
 // [0, 0] => get piece
@@ -173,7 +225,7 @@ func main() {
 // [x] trying to get the coordinates of a piece by giving the square "a1" and it gives back "00"
 // [x] check if the input square string is a valid square on a chessboard
 // - extract the FEN - Multidim slice to it's own function
-// - extract render current board to its own func
-// - move a piece
+// [x] extract render current board to its own func
+// [x] move a piece
 // - export FEN with moved square
 // - start valid move logic
