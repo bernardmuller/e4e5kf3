@@ -77,6 +77,54 @@ func pieceOnSquare(square string, board [][]string) (string, error) {
 	return piece, nil
 }
 
+func getSquareOnboard(coordinates []int, board *[][]string) string {
+	bp := *board
+	piece := bp[7-coordinates[1]][coordinates[0]]
+	return piece
+}
+
+func getForwardSquare(coordinates []int, board *[][]string) string {
+	bp := *board
+	piece := bp[7-coordinates[1]-1][coordinates[0]]
+	return piece
+}
+
+func getDoubleForwardSquare(coordinates []int, board *[][]string) string {
+	bp := *board
+	piece := bp[7-coordinates[1]-2][coordinates[0]]
+	return piece
+}
+
+func movePiece(selected_square []int, destination_square []int, board *[][]string) {
+
+}
+
+func pawnMove(piece_coordinates []int, destination_coordinates []int, board *[][]string) (string, error) {
+	cbp := *board
+	if destination_coordinates[1]-piece_coordinates[1] > 2 {
+		return "", errors.New("invalid move 1")
+	}
+	// 2nd Rank move
+	if piece_coordinates[1] == 1 {
+		if getForwardSquare(piece_coordinates, board) != " " || getDoubleForwardSquare(piece_coordinates, board) != " " {
+			return "", errors.New("invalid move 2")
+		}
+		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = cbp[7-piece_coordinates[1]][piece_coordinates[0]]
+		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
+		return "ok", nil
+	}
+	if destination_coordinates[1]-piece_coordinates[1] > 1 {
+		return "", errors.New("invalid move 3")
+	}
+	// Normal move
+	if getSquareOnboard([]int{piece_coordinates[1] - 1, piece_coordinates[0]}, board) != " " {
+		return "", errors.New("invalid move 4")
+	}
+	(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = cbp[7-piece_coordinates[1]][piece_coordinates[0]]
+	(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
+	return "ok", nil
+}
+
 func initialiseBoard(FEN_string *string) *[][]string {
 	FEN := FEN_string
 	FEN_layout := strings.Split(strings.Split(*FEN, " ")[0], "")
@@ -104,7 +152,8 @@ func initialiseBoard(FEN_string *string) *[][]string {
 				}
 			} else {
 				FEN_piece := FEN_layout[i]
-				current_board[row][col] = display[Piece(FEN_piece)]
+				// current_board[row][col] = display[Piece(FEN_piece)]
+				current_board[row][col] = FEN_piece
 				col++
 			}
 		}
@@ -116,7 +165,7 @@ func initialiseBoard(FEN_string *string) *[][]string {
 func startGameLoop(board *[][]string) {
 	for {
 		current_board := *board
-		fmt.Print("\033c")
+		// fmt.Print("\033c")
 		fmt.Println("   a b c d e f g h")
 		fmt.Println(" ╔═════════════════╗")
 		for i := 0; i < 8; i++ {
@@ -137,10 +186,6 @@ func startGameLoop(board *[][]string) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		// fmt.Scanf("%s", &user_input)
-		fmt.Println("")
-
-		fmt.Printf("user input => %s\n", user_input)
 
 		selected_square, destination_square := strings.Split(user_input, " ")[0], strings.Split(user_input, " ")[1]
 
@@ -159,15 +204,23 @@ func startGameLoop(board *[][]string) {
 			fmt.Println(piece_err)
 		}
 
-		cbp := &current_board
-		(*cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = piece
-		(*cbp)[7-selected_piece_coordinates[1]][selected_piece_coordinates[0]] = " "
+		// move piece
+
+		if piece == "p" || piece == "P" {
+			_, err := pawnMove(selected_piece_coordinates, destination_coordinates, board)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// cbp := &current_board
+		// (*cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = piece
+		// (*cbp)[7-selected_piece_coordinates[1]][selected_piece_coordinates[0]] = " "
 	}
 }
 
 func startNewGame(FEN *string) {
-	fmt.Println("start")
-	*FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	*FEN = "rnbqkbnr/p1pppppp/8/1p6/8/N7/PPPPPPPP/R1BQKBNR w KQkq - 0 1"
 	board := initialiseBoard(FEN)
 	startGameLoop(board)
 }
@@ -176,7 +229,7 @@ func main() {
 	invalid_input := false
 	for {
 		var FEN string
-		fmt.Print("\033c")
+		// fmt.Print("\033c")
 		fmt.Println("╔═══════════════════╗")
 		fmt.Println("║       Chess       ║")
 		fmt.Println("║                   ║")
@@ -199,7 +252,7 @@ func main() {
 			fmt.Println(err)
 		}
 
-		menu_input = strings.TrimSpace(menu_input) // Remove leading/trailing spaces
+		menu_input = strings.TrimSpace(menu_input)
 
 		if menu_input == "1" {
 			startNewGame(&FEN)
