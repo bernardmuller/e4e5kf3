@@ -95,6 +95,18 @@ func getDoubleForwardSquare(coordinates []int, board *[][]string) string {
 	return piece
 }
 
+func getForwardDiagonalLeftSquare(coordinates []int, board *[][]string) string {
+	bp := *board
+	piece := bp[7-coordinates[1]-1][coordinates[0]+1]
+	return piece
+}
+
+func getForwardDiagonalRightSquare(coordinates []int, board *[][]string) string {
+	bp := *board
+	piece := bp[7-coordinates[1]-1][coordinates[0]+1]
+	return piece
+}
+
 func movePiece(selected_square []int, destination_square []int, board *[][]string) {
 
 }
@@ -116,10 +128,25 @@ func pawnMove(piece_coordinates []int, destination_coordinates []int, board *[][
 	if destination_coordinates[1]-piece_coordinates[1] > 1 {
 		return "", errors.New("invalid move 3")
 	}
+	// capture diagonal right
+	if destination_coordinates[0] < 7 && getForwardDiagonalRightSquare(piece_coordinates, board) != " " {
+		fmt.Println("capture diagonal right")
+		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]+1] = getSquareOnboard(piece_coordinates, board)
+		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
+		return "ok", nil
+	}
+	// capture diagonal left
+	if destination_coordinates[0] > 0 && getForwardDiagonalLeftSquare(piece_coordinates, board) != " " {
+		fmt.Println("capture diagonal left")
+		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]-1] = getSquareOnboard(piece_coordinates, board)
+		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
+		return "ok", nil
+	}
 	// Normal move
 	if getSquareOnboard([]int{piece_coordinates[1] - 1, piece_coordinates[0]}, board) != " " {
 		return "", errors.New("invalid move 4")
 	}
+
 	(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = cbp[7-piece_coordinates[1]][piece_coordinates[0]]
 	(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
 	return "ok", nil
