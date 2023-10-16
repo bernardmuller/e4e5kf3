@@ -32,13 +32,28 @@ var display = map[Piece]string{
 
 type Square string
 
-type File string
-type Rank string
+type (
+	File string
+	Rank string
+)
 
-var FILES = [8]File{"a", "b", "c", "d", "e", "f", "g", "h"}
-var RANKS = [8]Rank{"1", "2", "3", "4", "5", "6", "7", "8"}
+var (
+	FILES = [8]File{"a", "b", "c", "d", "e", "f", "g", "h"}
+	RANKS = [8]Rank{"1", "2", "3", "4", "5", "6", "7", "8"}
+)
 
-func indexOfFile(item File, array [8]File) (int, error) {
+var CHESSBOARD = [][]string{
+	{"h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8"},
+	{"g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"},
+	{"f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"},
+	{"e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8"},
+	{"d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"},
+	{"c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"},
+	{"b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8"},
+	{"a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"},
+}
+
+func IndexOfFile(item File, array [8]File) (int, error) {
 	for k, v := range array {
 		if item == v {
 			return k, nil
@@ -57,7 +72,9 @@ func indexOfRank(item Rank, array [8]Rank) (int, error) {
 }
 
 func getPieceCoordinates(square string) ([]int, error) {
-	selected_file, file_err := indexOfFile(File(strings.Split(square, "")[0]), FILES)
+	fmt.Println("selected_square", square)
+	square = strings.TrimSpace(square)
+	selected_file, file_err := IndexOfFile(File(strings.Split(square, "")[0]), FILES)
 	selected_rank, rank_err := indexOfRank(Rank(strings.Split(square, "")[1]), RANKS)
 	if file_err != nil || rank_err != nil {
 		return []int{selected_file, selected_rank}, errors.New("invalid square")
@@ -69,7 +86,7 @@ func pieceOnSquare(square string, board [][]string) (string, error) {
 	selected_file := strings.Split(square, "")[0]
 	selected_rank := strings.Split(square, "")[1]
 	file_index, file_index_err := indexOfRank(Rank(selected_rank), RANKS)
-	rank_index, rank_index_err := indexOfFile(File(selected_file), FILES)
+	rank_index, rank_index_err := IndexOfFile(File(selected_file), FILES)
 	if file_index_err != nil || rank_index_err != nil {
 		return "", errors.New("invalid square")
 	}
@@ -108,47 +125,106 @@ func getForwardDiagonalRightSquare(coordinates []int, board *[][]string) string 
 }
 
 func movePiece(selected_square []int, destination_square []int, board *[][]string) {
-
+	cbp := *board
+	(cbp)[7-destination_square[1]][destination_square[0]] = getSquareOnboard(selected_square, board)
+	(cbp)[7-selected_square[1]][selected_square[0]] = " "
 }
 
-func pawnMove(piece_coordinates []int, destination_coordinates []int, board *[][]string) (string, error) {
-	cbp := *board
+func pawnMove(
+	piece_coordinates []int,
+	destination_coordinates []int,
+	board *[][]string,
+) (string, error) {
+	// can't move above 2 squares ahead
 	if destination_coordinates[1]-piece_coordinates[1] > 2 {
-		return "", errors.New("invalid move 1")
-	}
-	// 2nd Rank move
-	if piece_coordinates[1] == 1 {
-		if getForwardSquare(piece_coordinates, board) != " " || getDoubleForwardSquare(piece_coordinates, board) != " " {
-			return "", errors.New("invalid move 2")
-		}
-		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = cbp[7-piece_coordinates[1]][piece_coordinates[0]]
-		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
-		return "ok", nil
-	}
-	if destination_coordinates[1]-piece_coordinates[1] > 1 {
-		return "", errors.New("invalid move 3")
-	}
-	// capture diagonal right
-	if destination_coordinates[0] < 7 && getForwardDiagonalRightSquare(piece_coordinates, board) != " " {
-		fmt.Println("capture diagonal right")
-		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]+1] = getSquareOnboard(piece_coordinates, board)
-		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
-		return "ok", nil
-	}
-	// capture diagonal left
-	if destination_coordinates[0] > 0 && getForwardDiagonalLeftSquare(piece_coordinates, board) != " " {
-		fmt.Println("capture diagonal left")
-		(cbp)[7-destination_coordinates[1]][destination_coordinates[0]-1] = getSquareOnboard(piece_coordinates, board)
-		(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
-		return "ok", nil
-	}
-	// Normal move
-	if getSquareOnboard([]int{piece_coordinates[1] - 1, piece_coordinates[0]}, board) != " " {
-		return "", errors.New("invalid move 4")
+		return "", errors.New("invalid move")
 	}
 
-	(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = cbp[7-piece_coordinates[1]][piece_coordinates[0]]
-	(cbp)[7-piece_coordinates[1]][piece_coordinates[0]] = " "
+	// 2nd Rank move
+	if piece_coordinates[1] == 1 {
+		if getForwardSquare(piece_coordinates, board) != " " ||
+			getDoubleForwardSquare(piece_coordinates, board) != " " {
+			return "", errors.New("invalid move")
+		}
+		movePiece(piece_coordinates, destination_coordinates, board)
+		return "ok", nil
+	}
+
+	if destination_coordinates[1]-piece_coordinates[1] > 1 {
+		return "", errors.New("invalid move")
+	}
+
+	diagonal_right_square_piece := getForwardDiagonalRightSquare(piece_coordinates, board)
+	diagonal_right_square_coordinates, err := getPieceCoordinates(diagonal_right_square_piece)
+	if err != nil {
+		fmt.Println(err)
+	}
+	diagonal_left_square_piece := getForwardDiagonalLeftSquare(piece_coordinates, board)
+	diagonal_left_square_coordinates, err := getPieceCoordinates(diagonal_right_square_piece)
+	if err != nil {
+		fmt.Println(err)
+	}
+	forward_square_piece := getForwardSquare(piece_coordinates, board)
+	forward_square_coordinates, err := getPieceCoordinates(forward_square_piece)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// capture diagonal right
+	if destination_coordinates[0] == diagonal_right_square_coordinates[0] &&
+		destination_coordinates[1] == diagonal_right_square_coordinates[1] &&
+		diagonal_right_square_piece != " " {
+		fmt.Println("capture diagonal right")
+		movePiece(
+			piece_coordinates,
+			[]int{destination_coordinates[0] + 1, destination_coordinates[1]},
+			board,
+		)
+		return "ok", nil
+	}
+
+	// capture diagonal left
+	if destination_coordinates[0] == diagonal_left_square_coordinates[0] &&
+		destination_coordinates[1] == diagonal_left_square_coordinates[1] &&
+		diagonal_left_square_piece != " " {
+		fmt.Println("capture diagonal left")
+		movePiece(
+			piece_coordinates,
+			[]int{destination_coordinates[0], destination_coordinates[1] - 1},
+			board,
+		)
+		return "ok", nil
+	}
+
+	if destination_coordinates[0] != piece_coordinates[0] {
+		return "", errors.New("invalid move")
+	}
+
+	// Normal forward move
+	if forward_square_coordinates[0] == destination_coordinates[0] &&
+		forward_square_coordinates[1] == destination_coordinates[1] &&
+		getForwardSquare(piece_coordinates, board) != " " {
+		return "", errors.New("invalid move")
+	}
+
+	// promote
+	if destination_coordinates[1] == 7 {
+		in := bufio.NewReader(os.Stdin)
+		fmt.Print("")
+		promotion_piece, err := in.ReadString('\n')
+		if err != nil {
+			fmt.Println(err)
+		}
+		promotion_piece = strings.TrimSpace(promotion_piece)
+		if promotion_piece == "Q" || promotion_piece == "B" || promotion_piece == "N" ||
+			promotion_piece == "R" {
+			cbp := *board
+			(cbp)[7-destination_coordinates[1]][destination_coordinates[0]] = promotion_piece
+		}
+		return "ok", nil
+	}
+
+	movePiece(piece_coordinates, destination_coordinates, board)
 	return "ok", nil
 }
 
@@ -221,9 +297,11 @@ func startGameLoop(board *[][]string) {
 			fmt.Println(piece_coordinates_err)
 		}
 
-		destination_coordinates, piece_coordinates_err := getPieceCoordinates(destination_square)
-		if piece_coordinates_err != nil {
-			fmt.Println(piece_coordinates_err)
+		destination_coordinates, destination_coordinates_err := getPieceCoordinates(
+			destination_square,
+		)
+		if destination_coordinates_err != nil {
+			fmt.Println(destination_coordinates_err)
 		}
 
 		piece, piece_err := pieceOnSquare(selected_square, current_board)
@@ -291,15 +369,3 @@ func main() {
 		}
 	}
 }
-
-// Notes
-// a1 => [0, 0]
-// [0, 0] => get piece
-// use piece and [0, 0] to calculate valid moves
-// [x] trying to get the coordinates of a piece by giving the square "a1" and it gives back "00"
-// [x] check if the input square string is a valid square on a chessboard
-// - extract the FEN - Multidim slice to it's own function
-// [x] extract render current board to its own func
-// [x] move a piece
-// - export FEN with moved square
-// - start valid move logic
